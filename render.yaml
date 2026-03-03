@@ -1,0 +1,76 @@
+# Render Blueprint — VendorShield SaaS
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+
+  # ─── Backend API (Node.js) ─────────────────────────────────────────────────
+  - type: web
+    name: vendorshield-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: starter          # upgrade to standard for no cold starts
+
+    # Persistent disk — stores SQLite DB + uploaded PDFs across deploys
+    disk:
+      name: vendorshield-data
+      mountPath: /data
+      sizeGB: 1
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Persistent paths (mapped to the disk above)
+      - key: DB_PATH
+        value: /data/contracts.db
+      - key: UPLOAD_DIR
+        value: /data/uploads
+
+      # Set these in the Render dashboard (mark as Secret)
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: FRONTEND_URL
+        sync: false          # e.g. https://vendorshield.onrender.com
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_BASIC_PRICE_ID
+        sync: false
+      - key: STRIPE_PRO_PRICE_ID
+        sync: false
+      - key: STRIPE_ENTERPRISE_PRICE_ID
+        sync: false
+
+  # ─── Frontend (React static site) ─────────────────────────────────────────
+  - type: web
+    name: vendorshield-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+
+    envVars:
+      # Must be set BEFORE build — React bakes this in at build time
+      # Value: the public URL of vendorshield-api above, e.g.
+      #   https://vendorshield-api.onrender.com/api
+      - key: REACT_APP_API_URL
+        sync: false
+
+    # All routes fall back to index.html (client-side routing)
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
