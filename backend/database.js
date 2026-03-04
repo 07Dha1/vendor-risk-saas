@@ -8,13 +8,20 @@ const dbPath = process.env.DB_PATH || path.join(__dirname, 'contracts.db');
 
 // Ensure the directory exists before opening the database
 const dbDir = path.dirname(dbPath);
+let resolvedDbPath = dbPath;
 if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+  try {
+    fs.mkdirSync(dbDir, { recursive: true });
+  } catch (err) {
+    // Directory not writable (no persistent disk attached on Render free tier)
+    console.warn(`⚠️  Cannot create DB directory '${dbDir}': ${err.message}`);
+    console.warn('⚠️  Falling back to local path — data will not persist across deploys');
+    resolvedDbPath = path.join(__dirname, 'contracts.db');
+  }
 }
 
-const db = new Database(dbPath);
-
-console.log('✅ Database initialized at:', dbPath);
+const db = new Database(resolvedDbPath);
+console.log('✅ Database initialized at:', resolvedDbPath);
 
 // Enable foreign keys
 db.pragma('foreign_keys = ON');
