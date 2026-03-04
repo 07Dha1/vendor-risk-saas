@@ -25,10 +25,11 @@ const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000').spl
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
+    callback(null, false);
   },
   credentials: true,
 }));
+app.options('*', cors());
 // Raw body required for Stripe webhook signature verification — must come BEFORE express.json()
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
