@@ -20,15 +20,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',').map(s => s.trim());
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(null, false);
-  },
-  credentials: true,
-}));
+// Middleware — open CORS (auth uses localStorage, not cookies)
+app.use(cors({ origin: '*', methods: ['GET','POST','PUT','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }));
 app.options('*', cors());
 // Raw body required for Stripe webhook signature verification — must come BEFORE express.json()
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
