@@ -1356,8 +1356,32 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
+// Auto-seed admin on every startup (safe — skips if already exists)
+function seedAdmin() {
+  const ADMIN_EMAIL    = process.env.ADMIN_EMAIL    || 'dhawansai1@gmail.com';
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@1234';
+  const ADMIN_NAME     = process.env.ADMIN_NAME     || 'Admin';
+  try {
+    const existing = db.getUserByEmail(ADMIN_EMAIL);
+    if (!existing) {
+      const hashed = bcrypt.hashSync(ADMIN_PASSWORD, 10);
+      db.addUser(ADMIN_EMAIL, hashed, ADMIN_NAME, 'admin', 'VendorShield');
+      db.prepare("UPDATE users SET role = 'admin' WHERE email = ?").run(ADMIN_EMAIL);
+      console.log(`✅ Admin seeded: ${ADMIN_EMAIL}`);
+    } else if (existing.role !== 'admin') {
+      db.prepare("UPDATE users SET role = 'admin' WHERE email = ?").run(ADMIN_EMAIL);
+      console.log(`✅ Admin role restored: ${ADMIN_EMAIL}`);
+    } else {
+      console.log(`✅ Admin already exists: ${ADMIN_EMAIL}`);
+    }
+  } catch (e) {
+    console.error('Admin seed error:', e.message);
+  }
+}
+
 // Start server
 app.listen(PORT, () => {
   console.log(`✅ Backend server is running on http://localhost:${PORT}`);
   console.log(`📡 Test it at: http://localhost:${PORT}/api/health`);
+  seedAdmin();
 });
