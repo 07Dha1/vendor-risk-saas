@@ -750,6 +750,19 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// One-time admin setup — promotes a user to admin using a secret token
+// Usage: POST /api/admin/setup  { "email": "you@example.com", "secret": "<ADMIN_SETUP_SECRET>" }
+app.post('/api/admin/setup', (req, res) => {
+  const { email, secret } = req.body;
+  const SETUP_SECRET = process.env.ADMIN_SETUP_SECRET;
+  if (!SETUP_SECRET) return res.status(403).json({ status: 'error', message: 'Admin setup not enabled' });
+  if (secret !== SETUP_SECRET) return res.status(403).json({ status: 'error', message: 'Invalid secret' });
+  const user = db.getUserByEmail(email);
+  if (!user) return res.status(404).json({ status: 'error', message: 'User not found' });
+  db.prepare("UPDATE users SET role = 'admin' WHERE email = ?").run(email);
+  res.json({ status: 'success', message: `${email} is now an admin` });
+});
+
 // Admin Routes
 app.post('/api/admin/users', (req, res) => {
   try {
