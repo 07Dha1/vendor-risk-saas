@@ -172,10 +172,15 @@ export default function Pricing() {
     setError('');
     try {
       const { url } = await api.createCheckoutSession(user.id, plan.id, billing);
+      if (!url) throw new Error('no_url');
       window.location.href = url;
     } catch (e) {
-      setError(e.message || 'Failed to start checkout. Please try again.');
       setLoadingPlan('');
+      if (e.message === 'no_url' || e.message?.toLowerCase().includes('not configured') || e.message?.toLowerCase().includes('stripe')) {
+        setError('Payments are coming soon! Contact us at dhawansai1@gmail.com to upgrade your plan.');
+      } else {
+        setError(e.message || 'Failed to start checkout. Please try again.');
+      }
     }
   };
 

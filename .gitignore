@@ -3,6 +3,9 @@ node_modules/
 package-lock.json
 yarn.lock
 
+# Claude Code (AI session data — never commit)
+.claude/
+
 # IDEs
 .vscode/
 .idea/

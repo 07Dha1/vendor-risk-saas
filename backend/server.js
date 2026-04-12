@@ -1304,14 +1304,17 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     db.saveResetToken(user.id, token, expiresAt);
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://vendor-risk-saas.onrender.com';
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
-    await sendResetEmail(email, resetUrl);
-
-    console.log(`✅ Password reset requested for: ${email}`);
-
+    // Respond immediately — don't block on email sending
     res.json({ status: 'success', message: 'If that email is registered, a reset link has been sent.' });
+
+    // Send email in background
+    sendResetEmail(email, resetUrl)
+      .then(() => console.log(`✅ Password reset email sent to: ${email}`))
+      .catch(err => console.error(`❌ Failed to send reset email to ${email}:`, err.message));
+
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ status: 'error', message: 'Failed to process request. Please try again.' });
